@@ -42,9 +42,7 @@
     <div class="row">
         <button class="btn btn-outline" onclick="copyConfig()">Copy Config</button>
         <button class="btn btn-outline" onclick="saveConfig()">Save Config</button>
-        <button class="btn btn-outline" onclick="saveZip()">Save .zip</button>
     </div>
-    <div class="note">Save .zip can be imported straight into the WireGuard app. If the plain file is saved as .txt, rename it to .conf before importing.</div>
 
     <h2>FAST DNS USED (FIXED ORDER)</h2>
     <div class="box" id="fast"></div>
@@ -168,68 +166,31 @@ async function getDownloads() {
     catch (e) { return null; }
 }
 
-async function saveFile(name, data, localName) {
+async function saveFile(hostedName, data, ext) {
     const dl = await getDownloads();
-    if (dl) {
-        try { await dl.save({ filename: name, data }); toast("Saved " + name); }
+    if (dl) {   // hosted version: fixed allowed name, no prompt
+        try { await dl.save({ filename: hostedName, data }); toast("Saved " + hostedName); }
         catch (e) { if (!e || e.code !== "declined") toast("Could not save the file"); }
         return;
     }
-    const fname = localName || name;
+    // normal website / local file: ask for the file name, then download
+    let base = prompt("File name (without extension):", "fireguard");
+    if (base === null) return;   // cancelled
+    base = base.trim().replace(/\.(conf|zip|txt)$/i, "").replace(/[^A-Za-z0-9_=+.-]/g, "").slice(0, 15) || "fireguard";
+    const fname = base + "." + ext;
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([data]));
+    // octet-stream stops Android from appending ".txt" to the name
+    a.href = URL.createObjectURL(new Blob([data], { type: "application/octet-stream" }));
     a.download = fname;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     toast("Saved " + fname);
 }
 
 function saveConfig() {
     const text = current();
     if (!text) return toast("Generate a config first");
-    saveFile("fireguard.txt", text + "\n", "fireguard.conf");
-}
-
-// minimal ZIP writer (stored, no compression) so WireGuard can import the .conf directly
-const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
-    let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0;
-});
-function crc32(bytes) {
-    let c = 0xFFFFFFFF;
-    for (const b of bytes) c = CRC_TABLE[(c ^ b) & 0xFF] ^ (c >>> 8);
-    return (c ^ 0xFFFFFFFF) >>> 0;
-}
-function makeZip(name, text) {
-    const enc = new TextEncoder(), nameB = enc.encode(name), data = enc.encode(text);
-    const crc = crc32(data), size = data.length, d = new Date();
-    const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
-    const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
-    const local = new DataView(new ArrayBuffer(30));
-    [[0, 0x04034b50, 4], [4, 20, 2], [6, 0, 2], [8, 0, 2], [10, time, 2], [12, date, 2], [14, crc, 4],
-     [18, size, 4], [22, size, 4], [26, nameB.length, 2], [28, 0, 2]]
-        .forEach(([o, v, n]) => n === 4 ? local.setUint32(o, v, true) : local.setUint16(o, v, true));
-    const central = new DataView(new ArrayBuffer(46));
-    [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0, 2], [10, 0, 2], [12, time, 2], [14, date, 2],
-     [16, crc, 4], [20, size, 4], [24, size, 4], [28, nameB.length, 2], [30, 0, 2], [32, 0, 2],
-     [34, 0, 2], [36, 0, 2], [38, 0, 4], [42, 0, 4]]
-        .forEach(([o, v, n]) => n === 4 ? central.setUint32(o, v, true) : central.setUint16(o, v, true));
-    const centralOffset = 30 + nameB.length + size, centralSize = 46 + nameB.length;
-    const end = new DataView(new ArrayBuffer(22));
-    [[0, 0x06054b50, 4], [4, 0, 2], [6, 0, 2], [8, 1, 2], [10, 1, 2], [12, centralSize, 4],
-     [16, centralOffset, 4], [20, 0, 2]]
-        .forEach(([o, v, n]) => n === 4 ? end.setUint32(o, v, true) : end.setUint16(o, v, true));
-    const out = new Uint8Array(centralOffset + centralSize + 22);
-    let pos = 0;
-    for (const part of [new Uint8Array(local.buffer), nameB, data, new Uint8Array(central.buffer), nameB, new Uint8Array(end.buffer)]) {
-        out.set(part, pos); pos += part.length;
-    }
-    return out;
-}
-
-function saveZip() {
-    const text = current();
-    if (!text) return toast("Generate a config first");
-    saveFile("fireguard.zip", makeZip("fireguard.conf", text + "\n"));
+    saveFile("fireguard.txt", text + "\n", "conf");
 }
 
 document.getElementById("fast").innerHTML = FAST_DNS
