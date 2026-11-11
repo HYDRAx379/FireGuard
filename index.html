@@ -20,14 +20,14 @@
     .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
     .row { display: flex; gap: 8px; margin-top: 10px; }
     textarea { width: 100%; height: 270px; resize: vertical; padding: 14px; border-radius: 10px; background: #0d0f1a; border: 1px solid var(--border); color: var(--text); font: 13px 'Courier New', Consolas, monospace; outline: none; margin-top: 16px; }
-    .box { background: #0d0f1a; border: 1px solid var(--border); border-radius: 12px; padding: 6px 14px; }
-    .item { padding: 8px 0; border-bottom: 1px solid var(--border); font: 13px 'Courier New', Consolas, monospace; display: flex; gap: 10px; }
-    .item:last-child { border-bottom: none; }
-    .item b { color: var(--accent2); font-weight: 400; flex: 1; }
-    .item span { color: var(--muted); }
-    .note { color: var(--muted); font-size: 12px; margin-top: 8px; line-height: 1.6; }
+    .tg { display: flex; align-items: center; gap: 14px; margin-top: 26px; padding: 14px 16px; border-radius: 12px; text-decoration: none; color: var(--text); background: linear-gradient(135deg, rgba(34,211,238,.12), rgba(124,92,255,.12)); border: 1px solid var(--border); }
+    .tg:active { transform: scale(.98); }
+    .tg-icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent2), var(--accent)); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0; }
+    .tg-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .tg-text b { font-size: 14px; }
+    .tg-text small { color: var(--accent2); font-size: 12px; }
+    .tg-go { padding: 8px 16px; border-radius: 8px; background: var(--accent2); color: #0b0c14; font-weight: 700; font-size: 13px; }
     .footnote { text-align: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
-    .footnote a { color: var(--accent2); text-decoration: none; font-weight: 600; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1c1f30; border: 1px solid var(--accent2); color: var(--accent2); padding: 10px 18px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .25s; }
     .toast.show { opacity: 1; }
 </style>
@@ -44,11 +44,13 @@
         <button class="btn btn-outline" onclick="saveConfig()">Save Config</button>
     </div>
 
-    <h2>FAST DNS USED (FIXED ORDER)</h2>
-    <div class="box" id="fast"></div>
-    <div class="note">These five fast DNS are placed after the two random IPv4 DNS in every config.</div>
+    <a class="tg" href="https://t.me/HYDRAx379_Official" target="_blank" rel="noopener">
+        <span class="tg-icon">&#9992;</span>
+        <span class="tg-text"><b>Join our Telegram channel</b><small>@HYDRAx379_Official</small></span>
+        <span class="tg-go">Join</span>
+    </a>
 
-    <div class="footnote">Created by HYDRA &nbsp;·&nbsp; <a href="https://t.me/HYDRAx379_Official" target="_blank" rel="noopener">Telegram Channel</a></div>
+    <div class="footnote">Created by HYDRA</div>
 </div></div>
 <div class="toast" id="toast"></div>
 
@@ -193,8 +195,6 @@ function saveConfig() {
     saveFile("fireguard.txt", text + "\n", "conf");
 }
 
-document.getElementById("fast").innerHTML = FAST_DNS
-    .map(([n, l, a]) => `<div class="item"><span>${n} ${l}</span><b>${a}</b></div>`).join("");
 </script>
 </body>
 </html>
